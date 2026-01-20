@@ -1,0 +1,656 @@
+cells:
+  - kind: 2
+    value: "\r
+
+      -- veetech_employees.sql\r
+
+      -- Oracle SQL script to create sample employee table for company VeeTECH\r
+
+      -- and populate it with data.\r
+
+      \r
+
+      -- Drop table if exists (safe)\r
+
+      BEGIN\r
+
+      \    EXECUTE IMMEDIATE 'DROP TABLE VEETECH_EMPLOYEES CASCADE
+      CONSTRAINTS';\r
+
+      EXCEPTION\r
+
+      \    WHEN OTHERS THEN\r
+
+      \        IF SQLCODE != -942 THEN RAISE; END IF; -- Ignore ORA-00942 (table
+      not found)\r
+
+      END;\r
+
+      /\r
+
+      \r
+
+      -- Create table\r
+
+      CREATE TABLE VEETECH_EMPLOYEES (\r
+
+      \    EMPLOYEE_ID   NUMBER(6)       PRIMARY KEY,\r
+
+      \    FIRST_NAME    VARCHAR2(50)    NOT NULL,\r
+
+      \    LAST_NAME     VARCHAR2(50)    NOT NULL,\r
+
+      \    JOB_TITLE     VARCHAR2(100)   NOT NULL,\r
+
+      \    SALARY        NUMBER(12,2)    NOT NULL,\r
+
+      \    HIRE_DATE     DATE            DEFAULT SYSDATE\r
+
+      );\r
+
+      \r
+
+      -- Insert sample data for VeeTECH\r
+
+      INSERT INTO VEETECH_EMPLOYEES VALUES (1001,
+      'Ava',     'Singh',      'Chief Executive Officer',     280000, DATE
+      '2016-04-11');\r
+
+      INSERT INTO VEETECH_EMPLOYEES VALUES (1002, 'Benzangani', 'Mahlangu',
+      'Chief Technology Officer',     240000, DATE '2017-09-03');\r
+
+      INSERT INTO VEETECH_EMPLOYEES VALUES (1003, 'Keegan',  'Pillay',     'IT
+      Manager',                   165000, DATE '2018-01-15');\r
+
+      INSERT INTO VEETECH_EMPLOYEES VALUES (1004, 'Ndamulelo', 'Netshingane',
+      'Senior Software Engineer',     140000, DATE '2019-06-20');\r
+
+      INSERT INTO VEETECH_EMPLOYEES VALUES (1005,
+      'Sophia',  'Kim',        'Software Engineer',            115000, DATE
+      '2020-02-10');\r
+
+      INSERT INTO VEETECH_EMPLOYEES VALUES (1006,
+      'Ethan',   'Brown',      'DevOps Engineer',              125500, DATE
+      '2019-11-05');\r
+
+      INSERT INTO VEETECH_EMPLOYEES VALUES (1007, 'Nina',    'Kaur',       'Data
+      Scientist',               132000, DATE '2021-07-01');\r
+
+      INSERT INTO VEETECH_EMPLOYEES VALUES (1008,
+      'Carlos',  'Lopez',      'Product Manager',              138000, DATE
+      '2018-10-30');\r
+
+      INSERT INTO VEETECH_EMPLOYEES VALUES (1009, 'Olivia',  'Nguyen',     'QA
+      Engineer',                  96000,  DATE '2022-03-12');\r
+
+      INSERT INTO VEETECH_EMPLOYEES VALUES (1010,
+      'Daniel',  'Smith',      'Sales Executive',              89000,  DATE
+      '2020-08-25');\r
+
+      INSERT INTO VEETECH_EMPLOYEES VALUES (1011, 'Priya',   'Mehta',      'HR
+      Manager',                   98000,  DATE '2017-05-18');\r
+
+      INSERT INTO VEETECH_EMPLOYEES VALUES (1012, 'Sam',     'Taylor',     'UX
+      Designer',                  105000, DATE '2021-12-01');\r
+
+      \r
+
+      COMMIT;\r
+
+      \r
+
+      -- Example Queries -----------------------------------------------\r
+
+      \r
+
+      -- 1) Show all employees\r
+
+      SELECT \r
+
+      \    EMPLOYEE_ID,\r
+
+      \    FIRST_NAME || ' ' || LAST_NAME AS FULL_NAME,\r
+
+      \    JOB_TITLE,\r
+
+      \    SALARY,\r
+
+      \    TO_CHAR(HIRE_DATE,'YYYY-MM-DD') AS HIRE_DATE\r
+
+      FROM VEETECH_EMPLOYEES\r
+
+      ORDER BY EMPLOYEE_ID;\r
+
+      \r
+
+      -- 2) Summary by job title\r
+
+      SELECT \r
+
+      \    JOB_TITLE,\r
+
+      \    COUNT(*) AS EMP_COUNT,\r
+
+      \    ROUND(AVG(SALARY),2) AS AVG_SALARY,\r
+
+      \    ROUND(MIN(SALARY),2) AS MIN_SALARY,\r
+
+      \    ROUND(MAX(SALARY),2) AS MAX_SALARY\r
+
+      FROM VEETECH_EMPLOYEES\r
+
+      GROUP BY JOB_TITLE\r
+
+      ORDER BY AVG_SALARY DESC;\r\n"
+    languageId: oracle-sql
+  - kind: 2
+    value: "\r
+
+      -----------------------------------------------------------------------\r
+
+      -- 0) Drop tables if they exist (safe to re-run)\r
+
+      -----------------------------------------------------------------------\r
+
+      BEGIN\r
+
+      \    EXECUTE IMMEDIATE 'DROP TABLE EMPLOYEE_PROJECTS CASCADE
+      CONSTRAINTS';\r
+
+      EXCEPTION\r
+
+      \    WHEN OTHERS THEN\r
+
+      \        IF SQLCODE != -942 THEN RAISE; END IF;\r
+
+      END;\r
+
+      /\r
+
+      \r
+
+      BEGIN\r
+
+      \    EXECUTE IMMEDIATE 'DROP TABLE PROJECTS CASCADE CONSTRAINTS';\r
+
+      EXCEPTION\r
+
+      \    WHEN OTHERS THEN\r
+
+      \        IF SQLCODE != -942 THEN RAISE; END IF;\r
+
+      END;\r
+
+      /\r
+
+      \r
+
+      -----------------------------------------------------------------------\r
+
+      -- 1) Create PROJECTS table\r
+
+      -----------------------------------------------------------------------\r
+
+      CREATE TABLE PROJECTS (\r
+
+      \    PROJECT_ID      NUMBER(8)        PRIMARY KEY,\r
+
+      \    PROJECT_CODE    VARCHAR2(40)     NOT NULL,\r
+
+      \    PROJECT_NAME    VARCHAR2(200)    NOT NULL,\r
+
+      \    DEPARTMENT_ID   NUMBER(6)        NOT NULL, -- owning/lead
+      department\r
+
+      \    START_DATE      DATE             NOT NULL,\r
+
+      \    END_DATE        DATE             NULL,\r
+
+      \    STATUS          VARCHAR2(20)     NOT NULL, -- Planned, Active, On
+      Hold, Completed, Cancelled\r
+
+      \    BUDGET          NUMBER(14,2)     NULL,\r
+
+      \    DESCRIPTION     VARCHAR2(4000)   NULL,\r
+
+      \    CONSTRAINT UK_PROJECTS_CODE UNIQUE (PROJECT_CODE),\r
+
+      \    CONSTRAINT CHK_PROJECTS_STATUS CHECK (STATUS IN
+      ('Planned','Active','On Hold','Completed','Cancelled')),\r
+
+      \    CONSTRAINT CHK_PROJECTS_DATES CHECK (END_DATE IS NULL OR END_DATE >=
+      START_DATE),\r
+
+      \    CONSTRAINT FK_PROJECTS_DEPT FOREIGN KEY (DEPARTMENT_ID) REFERENCES
+      DEPARTMENTS(DEPARTMENT_ID)\r
+
+      );\r
+
+      \r
+
+      -- Helpful index for department-based filters\r
+
+      CREATE INDEX IX_PROJECTS_DEPT ON PROJECTS (DEPARTMENT_ID);\r
+
+      \r
+
+      -----------------------------------------------------------------------\r
+
+      -- 2) Create EMPLOYEE_PROJECTS (many-to-many assignments)\r
+
+      -----------------------------------------------------------------------\r
+
+      CREATE TABLE EMPLOYEE_PROJECTS (\r
+
+      \    EMPLOYEE_ID     NUMBER(6)      NOT NULL,\r
+
+      \    PROJECT_ID      NUMBER(8)      NOT NULL,\r
+
+      \    ROLE            VARCHAR2(100)  NOT NULL,\r
+
+      \    ALLOCATION_PCT  NUMBER(5,2)    DEFAULT 100 NOT NULL, -- 0..100\r
+
+      \    ASSIGNED_DATE   DATE           DEFAULT SYSDATE NOT NULL,\r
+
+      \    RELEASE_DATE    DATE           NULL,\r
+
+      \    CONSTRAINT PK_EMPLOYEE_PROJECTS PRIMARY KEY (EMPLOYEE_ID,
+      PROJECT_ID),\r
+
+      \    CONSTRAINT FK_EMP_PROJ_EMP FOREIGN KEY (EMPLOYEE_ID) REFERENCES
+      VEETECH_EMPLOYEES(EMPLOYEE_ID),\r
+
+      \    CONSTRAINT FK_EMP_PROJ_PROJ FOREIGN KEY (PROJECT_ID) REFERENCES
+      PROJECTS(PROJECT_ID),\r
+
+      \    CONSTRAINT CHK_ALLOCATION_PCT CHECK (ALLOCATION_PCT BETWEEN 0 AND
+      100),\r
+
+      \    CONSTRAINT CHK_ASSIGN_RELEASE CHECK (RELEASE_DATE IS NULL OR
+      RELEASE_DATE >= ASSIGNED_DATE)\r
+
+      );\r
+
+      \r
+
+      -- Helpful indexes\r
+
+      CREATE INDEX IX_EMP_PROJ_PROJECT ON EMPLOYEE_PROJECTS (PROJECT_ID);\r
+
+      CREATE INDEX IX_EMP_PROJ_EMPLOYEE ON EMPLOYEE_PROJECTS (EMPLOYEE_ID);\r
+
+      \r
+
+      -----------------------------------------------------------------------\r
+
+      -- 3) Seed PROJECTS\r
+
+      --    (IDs/codes chosen to avoid clashes and be human-friendly)\r
+
+      -----------------------------------------------------------------------\r
+
+      INSERT INTO PROJECTS (PROJECT_ID, PROJECT_CODE, PROJECT_NAME,
+      DEPARTMENT_ID, START_DATE, END_DATE, STATUS, BUDGET, DESCRIPTION) VALUES\r
+
+      (2001, 'NET-FW-HARDEN', 'Network Firewall Hardening',            20, DATE
+      '2023-10-01', NULL,               'Active',    500000, 'Harden perimeter
+      and internal firewalls');\r
+
+      \r
+
+      INSERT INTO PROJECTS VALUES\r
+
+      (2002, 'SAGE-MIG-2025',   'SAGE 300 PEOPLE migration',         100, DATE
+      '2025-12-05', NULL,               'Completed',    350000, 'Migrate SAGE
+      300 PEOPLE to Cloud');\r
+
+      \r
+
+      INSERT INTO PROJECTS VALUES\r
+
+      (2003, 'DATA-PLAT-2024','Data Platform Modernization',          40,  DATE
+      '2024-04-15', NULL,               'On Hold',   800000, 'Modernize data
+      ingestion and analytics stack');\r
+
+      \r
+
+      INSERT INTO PROJECTS VALUES\r
+
+      (2004, 'CI-CD-2024',    'CI/CD Pipeline Upgrade',               100, DATE
+      '2024-03-01', DATE '2024-12-15',  'Completed', 120000, 'Upgrade build,
+      test, and deploy pipelines');\r
+
+      \r
+
+      INSERT INTO PROJECTS VALUES\r
+
+      (2005, 'APP-V2-2025',   'Mobile App v2 Release',                30,  DATE
+      '2025-05-10', NULL,               'Active',    450000, 'New features,
+      performance and security');\r
+
+      \r
+
+      INSERT INTO PROJECTS VALUES\r
+
+      (2006, 'QA-AUTO-2025',  'QA Automation Framework',              60,  DATE
+      '2025-06-01', NULL,               'Planned',   150000, 'Unified test
+      automation framework');\r
+
+      \r
+
+      INSERT INTO PROJECTS VALUES\r
+
+      (2007, 'CRM-ROLL-2025', 'CRM Rollout',                          70,  DATE
+      '2025-07-01', NULL,               'Active',    300000, 'Enterprise CRM
+      implementation');\r
+
+      \r
+
+      INSERT INTO PROJECTS VALUES\r
+
+      (2008, 'HRIS-2025',     'HRIS Implementation',                  80,  DATE
+      '2025-08-01', NULL,               'Active',    280000, 'Implement HR
+      information system');\r
+
+      \r
+
+      INSERT INTO PROJECTS VALUES\r
+
+      (2009, 'UX-REDESIGN-25','Website UX Redesign',                  90,  DATE
+      '2025-09-01', NULL,               'Active',    200000, 'Modernize
+      corporate web UX');\r
+
+      \r
+
+      INSERT INTO PROJECTS VALUES\r
+
+      (2010, 'PRD-STRAT-2026','Product Strategy 2026',                50,  DATE
+      '2026-01-01', NULL,               'Planned',   100000, 'Roadmap and
+      portfolio planning');\r
+
+      \r
+
+      COMMIT;\r
+
+      \r
+
+      -----------------------------------------------------------------------\r
+
+      -- 4) Seed EMPLOYEE_PROJECTS (sample assignments)\r
+
+      --    Uses employees and departments created earlier.\r
+
+      -----------------------------------------------------------------------\r
+
+      \r
+
+      -- 2001 Network Firewall Hardening\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1002, 2001, 'Executive
+      Sponsor',  10, DATE '2023-10-01', NULL);\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1003, 2001, 'Project
+      Lead',       50, DATE '2023-10-02', NULL);\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1006, 2001, 'Network
+      Engineer',   60, DATE '2023-10-05', NULL);\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1004, 2001, 'Security
+      Engineer',  20, DATE '2023-11-01', NULL);\r
+
+      \r
+
+      -- 2002 Palo Alto Migration\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1003, 2002, 'Migration
+      Lead',     40, DATE '2024-02-01', NULL);\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1006, 2002, 'Firewall
+      Engineer',  60, DATE '2024-02-01', NULL);\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1004, 2002, 'Integration
+      Eng.',   30, DATE '2024-02-15', NULL);\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1009, 2002, 'QA
+      Analyst',         20, DATE '2024-03-01', NULL);\r
+
+      \r
+
+      -- 2003 Data Platform Modernization\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1007, 2003, 'Data
+      Lead',          50, DATE '2024-04-15', DATE '2024-12-31');\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1004, 2003, 'Platform
+      Eng.',      50, DATE '2024-05-01', DATE '2024-12-31');\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1008, 2003, 'Product
+      Owner',      25, DATE '2024-05-15', DATE '2024-12-31');\r
+
+      \r
+
+      -- 2004 CI/CD Pipeline Upgrade (completed)\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1006, 2004, 'DevOps
+      Lead',        60, DATE '2024-03-01', DATE '2024-12-15');\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1004, 2004, 'Build
+      Engineer',     40, DATE '2024-03-10', DATE '2024-12-15');\r
+
+      \r
+
+      -- 2005 Mobile App v2\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1004, 2005, 'Tech
+      Lead',          50, DATE '2025-05-10', NULL);\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1005, 2005, 'Software
+      Engineer',  60, DATE '2025-05-12', NULL);\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1009, 2005, 'QA
+      Engineer',        40, DATE '2025-06-01', NULL);\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1012, 2005, 'UX
+      Designer',        40, DATE '2025-05-15', NULL);\r
+
+      \r
+
+      -- 2006 QA Automation\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1009, 2006, 'QA
+      Lead',            50, DATE '2025-06-01', NULL);\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1005, 2006,
+      'SDET',               40, DATE '2025-06-10', NULL);\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1004, 2006,
+      'Advisor',            10, DATE '2025-06-10', NULL);\r
+
+      \r
+
+      -- 2007 CRM Rollout\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1010, 2007, 'Business
+      Lead',      50, DATE '2025-07-01', NULL);\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1008, 2007, 'Product
+      Manager',    30, DATE '2025-07-05', NULL);\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1003, 2007, 'IT
+      Support',         20, DATE '2025-07-15', NULL);\r
+
+      \r
+
+      -- 2008 HRIS Implementation\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1011, 2008, 'HR
+      Lead',            60, DATE '2025-08-01', NULL);\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1003, 2008, 'IT
+      Integrations',    30, DATE '2025-08-10', NULL);\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1008, 2008, 'Product
+      Owner',      20, DATE '2025-08-10', NULL);\r
+
+      \r
+
+      -- 2009 Website UX Redesign\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1012, 2009, 'UX
+      Lead',            60, DATE '2025-09-01', NULL);\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1008, 2009, 'Product
+      Manager',    20, DATE '2025-09-05', NULL);\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1005, 2009, 'Frontend
+      Dev',       40, DATE '2025-09-10', NULL);\r
+
+      \r
+
+      -- 2010 Product Strategy 2026\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1008, 2010, 'Program
+      Lead',       40, DATE '2026-01-01', NULL);\r
+
+      INSERT INTO EMPLOYEE_PROJECTS VALUES (1001, 2010, 'Executive
+      Sponsor',  10, DATE '2026-01-01', NULL);\r
+
+      \r
+
+      COMMIT;\r
+
+      \r
+
+      -----------------------------------------------------------------------\r
+
+      -- 5) Helpful example queries\r
+
+      -----------------------------------------------------------------------\r
+
+      \r
+
+      -- a) List projects with owning department and department manager\r
+
+      SELECT \r
+
+      \    p.PROJECT_ID,\r
+
+      \    p.PROJECT_CODE,\r
+
+      \    p.PROJECT_NAME,\r
+
+      \    p.STATUS,\r
+
+      \    TO_CHAR(p.START_DATE,'YYYY-MM-DD') AS START_DATE,\r
+
+      \    TO_CHAR(p.END_DATE,  'YYYY-MM-DD') AS END_DATE,\r
+
+      \    d.DEPARTMENT_NAME,\r
+
+      \    d.MANAGER_ID,\r
+
+      \    (SELECT FIRST_NAME || ' ' || LAST_NAME FROM VEETECH_EMPLOYEES m WHERE
+      m.EMPLOYEE_ID = d.MANAGER_ID) AS DEPT_MANAGER\r
+
+      FROM PROJECTS p\r
+
+      JOIN DEPARTMENTS d ON d.DEPARTMENT_ID = p.DEPARTMENT_ID\r
+
+      ORDER BY p.PROJECT_ID;\r
+
+      \r
+
+      -- b) Active projects with headcount\r
+
+      SELECT\r
+
+      \    p.PROJECT_CODE,\r
+
+      \    p.PROJECT_NAME,\r
+
+      \    COUNT(ep.EMPLOYEE_ID) AS ACTIVE_HEADCOUNT\r
+
+      FROM PROJECTS p\r
+
+      LEFT JOIN EMPLOYEE_PROJECTS ep \r
+
+      \       ON ep.PROJECT_ID = p.PROJECT_ID\r
+
+      \      AND (ep.RELEASE_DATE IS NULL OR ep.RELEASE_DATE >=
+      TRUNC(SYSDATE))\r
+
+      WHERE p.STATUS = 'Active'\r
+
+      GROUP BY p.PROJECT_CODE, p.PROJECT_NAME\r
+
+      ORDER BY ACTIVE_HEADCOUNT DESC, p.PROJECT_CODE;\r
+
+      \r
+
+      -- c) Employee utilization across active projects (today)\r
+
+      SELECT\r
+
+      \    e.EMPLOYEE_ID,\r
+
+      \    e.FIRST_NAME || ' ' || e.LAST_NAME AS EMPLOYEE,\r
+
+      \    SUM(ep.ALLOCATION_PCT) AS ALLOCATION_PCT_TOTAL\r
+
+      FROM VEETECH_EMPLOYEES e\r
+
+      JOIN EMPLOYEE_PROJECTS ep ON ep.EMPLOYEE_ID = e.EMPLOYEE_ID\r
+
+      JOIN PROJECTS p ON p.PROJECT_ID = ep.PROJECT_ID\r
+
+      WHERE (ep.RELEASE_DATE IS NULL OR ep.RELEASE_DATE >= TRUNC(SYSDATE))\r
+
+      \  AND ep.ASSIGNED_DATE <= TRUNC(SYSDATE)\r
+
+      \  AND p.STATUS IN ('Active','Planned','On Hold') -- adjust as needed\r
+
+      GROUP BY e.EMPLOYEE_ID, e.FIRST_NAME, e.LAST_NAME\r
+
+      ORDER BY ALLOCATION_PCT_TOTAL DESC, e.EMPLOYEE_ID;\r
+
+      \r
+
+      -- d) Project timeline (duration in days; unfinished projects end at
+      SYSDATE)\r
+
+      SELECT\r
+
+      \    p.PROJECT_CODE,\r
+
+      \    p.PROJECT_NAME,\r
+
+      \    TO_CHAR(p.START_DATE,'YYYY-MM-DD') AS START_DATE,\r
+
+      \    TO_CHAR(p.END_DATE,'YYYY-MM-DD')   AS END_DATE,\r
+
+      \    ROUND(NVL(p.END_DATE, SYSDATE) - p.START_DATE) AS DURATION_DAYS,\r
+
+      \    p.STATUS\r
+
+      FROM PROJECTS p\r
+
+      ORDER BY p.START_DATE;\r
+
+      \r
+
+      -- e) Projects by status\r
+
+      SELECT\r
+
+      \    p.STATUS,\r
+
+      \    COUNT(*) AS PROJECT_COUNT,\r
+
+      \    ROUND(SUM(NVL(p.BUDGET,0)),2) AS TOTAL_BUDGET\r
+
+      FROM PROJECTS p\r
+
+      GROUP BY p.STATUS\r
+
+      ORDER BY PROJECT_COUNT DESC, p.STATUS;\r\n"
+    languageId: oracle-sql
