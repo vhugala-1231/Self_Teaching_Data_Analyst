@@ -654,3 +654,255 @@ cells:
 
       ORDER BY PROJECT_COUNT DESC, p.STATUS;\r\n"
     languageId: oracle-sql
+  - kind: 2
+    value: "\r
+
+      \r
+
+      -- 1) Drop DEPARTMENTS table if it exists (safe to re-run)\r
+
+      \r
+
+      BEGIN\r
+
+      \    EXECUTE IMMEDIATE 'DROP TABLE DEPARTMENTS CASCADE CONSTRAINTS';\r
+
+      EXCEPTION\r
+
+      \    WHEN OTHERS THEN\r
+
+      \        IF SQLCODE != -942 THEN RAISE; END IF; -- ignore table not
+      found\r
+
+      END;\r
+
+      /\r
+
+      \r
+
+      -- 2) Create DEPARTMENTS table\r
+
+      \r
+
+      CREATE TABLE DEPARTMENTS (\r
+
+      \    DEPARTMENT_ID   NUMBER(6)      PRIMARY KEY,\r
+
+      \    DEPARTMENT_NAME VARCHAR2(100)  NOT NULL,\r
+
+      \    MANAGER_ID      NUMBER(6)      NULL,       -- optional: manager is an
+      employee\r
+
+      \    LOCATION        VARCHAR2(100)  NULL\r
+
+      );\r
+
+      \r
+
+      -- Optional index for MANAGER_ID (if you’ll query by manager often)\r
+
+      CREATE INDEX IX_DEPARTMENTS_MANAGER ON DEPARTMENTS (MANAGER_ID);\r
+
+      \r
+
+      \r
+
+      -- 3) Seed departments\r
+
+      \r
+
+      INSERT INTO DEPARTMENTS (DEPARTMENT_ID, DEPARTMENT_NAME, MANAGER_ID,
+      LOCATION) VALUES (10,  'Executive',               1001, 'Johannesburg');\r
+
+      INSERT INTO DEPARTMENTS (DEPARTMENT_ID, DEPARTMENT_NAME, MANAGER_ID,
+      LOCATION) VALUES (20,  'Technology (CTO Office)', 1002, 'Johannesburg');\r
+
+      INSERT INTO DEPARTMENTS (DEPARTMENT_ID, DEPARTMENT_NAME, MANAGER_ID,
+      LOCATION) VALUES (30,  'Software Engineering',    1004, 'Johannesburg');\r
+
+      INSERT INTO DEPARTMENTS (DEPARTMENT_ID, DEPARTMENT_NAME, MANAGER_ID,
+      LOCATION) VALUES (40,  'Data Science',            1007, 'Johannesburg');\r
+
+      INSERT INTO DEPARTMENTS (DEPARTMENT_ID, DEPARTMENT_NAME, MANAGER_ID,
+      LOCATION) VALUES (50,  'Product Management',      1008, 'Johannesburg');\r
+
+      INSERT INTO DEPARTMENTS (DEPARTMENT_ID, DEPARTMENT_NAME, MANAGER_ID,
+      LOCATION) VALUES (60,  'Quality Assurance',       1009, 'Johannesburg');\r
+
+      INSERT INTO DEPARTMENTS (DEPARTMENT_ID, DEPARTMENT_NAME, MANAGER_ID,
+      LOCATION) VALUES (70,  'Sales',                   1010, 'Johannesburg');\r
+
+      INSERT INTO DEPARTMENTS (DEPARTMENT_ID, DEPARTMENT_NAME, MANAGER_ID,
+      LOCATION) VALUES (80,  'Human Resources',         1011, 'Johannesburg');\r
+
+      INSERT INTO DEPARTMENTS (DEPARTMENT_ID, DEPARTMENT_NAME, MANAGER_ID,
+      LOCATION) VALUES (90,  'UX & Design',             1012, 'Johannesburg');\r
+
+      INSERT INTO DEPARTMENTS (DEPARTMENT_ID, DEPARTMENT_NAME, MANAGER_ID,
+      LOCATION) VALUES (100, 'IT & Operations',         1003, 'Johannesburg');\r
+
+      \r
+
+      COMMIT;\r
+
+      \r
+
+      \r
+
+      -- 4) Add DEPARTMENT_ID to employees and create FK\r
+
+      --     (nullable first, populate, then enforce NOT NULL)\r
+
+      \r
+
+      ALTER TABLE VEETECH_EMPLOYEES\r
+
+      \    ADD (DEPARTMENT_ID NUMBER(6));\r
+
+      \r
+
+      -- Map employees to departments by job function\r
+
+      UPDATE VEETECH_EMPLOYEES SET DEPARTMENT_ID = 10   WHERE JOB_TITLE = 'Chief
+      Executive Officer';\r
+
+      UPDATE VEETECH_EMPLOYEES SET DEPARTMENT_ID = 20   WHERE JOB_TITLE = 'Chief
+      Technology Officer';\r
+
+      UPDATE VEETECH_EMPLOYEES SET DEPARTMENT_ID = 100  WHERE JOB_TITLE = 'IT
+      Manager';\r
+
+      UPDATE VEETECH_EMPLOYEES SET DEPARTMENT_ID = 30   WHERE JOB_TITLE IN
+      ('Senior Software Engineer','Software Engineer');\r
+
+      UPDATE VEETECH_EMPLOYEES SET DEPARTMENT_ID = 100  WHERE JOB_TITLE =
+      'DevOps Engineer';\r
+
+      UPDATE VEETECH_EMPLOYEES SET DEPARTMENT_ID = 40   WHERE JOB_TITLE = 'Data
+      Scientist';\r
+
+      UPDATE VEETECH_EMPLOYEES SET DEPARTMENT_ID = 50   WHERE JOB_TITLE =
+      'Product Manager';\r
+
+      UPDATE VEETECH_EMPLOYEES SET DEPARTMENT_ID = 60   WHERE JOB_TITLE = 'QA
+      Engineer';\r
+
+      UPDATE VEETECH_EMPLOYEES SET DEPARTMENT_ID = 70   WHERE JOB_TITLE = 'Sales
+      Executive';\r
+
+      UPDATE VEETECH_EMPLOYEES SET DEPARTMENT_ID = 80   WHERE JOB_TITLE = 'HR
+      Manager';\r
+
+      UPDATE VEETECH_EMPLOYEES SET DEPARTMENT_ID = 90   WHERE JOB_TITLE = 'UX
+      Designer';\r
+
+      \r
+
+      COMMIT;\r
+
+      \r
+
+      -- Now enforce NOT NULL and add the foreign key constraint\r
+
+      ALTER TABLE VEETECH_EMPLOYEES\r
+
+      \    MODIFY (DEPARTMENT_ID CONSTRAINT NN_EMP_DEPT NOT NULL);\r
+
+      \r
+
+      ALTER TABLE VEETECH_EMPLOYEES\r
+
+      \    ADD CONSTRAINT FK_EMP_DEPT\r
+
+      \        FOREIGN KEY (DEPARTMENT_ID)\r
+
+      \        REFERENCES DEPARTMENTS (DEPARTMENT_ID);\r
+
+      \r
+
+      -- Optional index for faster joins\r
+
+      CREATE INDEX IX_EMPLOYEES_DEPT ON VEETECH_EMPLOYEES (DEPARTMENT_ID);\r
+
+      \r
+
+      -----------------------------------------------------------------------\r
+
+      -- 5) Helpful example queries\r
+
+      -----------------------------------------------------------------------\r
+
+      \r
+
+      -- a) List employees with department names\r
+
+      SELECT \r
+
+      \    e.EMPLOYEE_ID,\r
+
+      \    e.FIRST_NAME || ' ' || e.LAST_NAME AS FULL_NAME,\r
+
+      \    e.JOB_TITLE,\r
+
+      \    e.SALARY,\r
+
+      \    TO_CHAR(e.HIRE_DATE,'YYYY-MM-DD') AS HIRE_DATE,\r
+
+      \    d.DEPARTMENT_NAME\r
+
+      FROM VEETECH_EMPLOYEES e\r
+
+      JOIN DEPARTMENTS d ON d.DEPARTMENT_ID = e.DEPARTMENT_ID\r
+
+      ORDER BY e.EMPLOYEE_ID;\r
+
+      \r
+
+      -- b) Department headcount and salary stats\r
+
+      SELECT\r
+
+      \    d.DEPARTMENT_NAME,\r
+
+      \    COUNT(*)                                AS EMP_COUNT,\r
+
+      \    ROUND(AVG(e.SALARY),2)                  AS AVG_SALARY,\r
+
+      \    ROUND(MIN(e.SALARY),2)                  AS MIN_SALARY,\r
+
+      \    ROUND(MAX(e.SALARY),2)                  AS MAX_SALARY\r
+
+      FROM DEPARTMENTS d\r
+
+      JOIN VEETECH_EMPLOYEES e ON e.DEPARTMENT_ID = d.DEPARTMENT_ID\r
+
+      GROUP BY d.DEPARTMENT_NAME\r
+
+      ORDER BY EMP_COUNT DESC, d.DEPARTMENT_NAME;\r
+
+      \r
+
+      -- c) Show each department with its manager (if set)\r
+
+      SELECT\r
+
+      \    d.DEPARTMENT_ID,\r
+
+      \    d.DEPARTMENT_NAME,\r
+
+      \    d.LOCATION,\r
+
+      \    d.MANAGER_ID,\r
+
+      \    (SELECT FIRST_NAME || ' ' || LAST_NAME \r
+
+      \       FROM VEETECH_EMPLOYEES m \r
+
+      \      WHERE m.EMPLOYEE_ID = d.MANAGER_ID) AS MANAGER_NAME\r
+
+      FROM DEPARTMENTS d\r
+
+      ORDER BY d.DEPARTMENT_ID;\r
+
+      ``\r\n"
+    languageId: oracle-sql
